@@ -1,4 +1,4 @@
-from pprint import pprint
+#! /bin/env python3
 
 import socket
 import ipaddress
@@ -13,13 +13,14 @@ from tencentcloud.dnspod.v20210323 import models
 
 '''
 ddns configure file
+On archlinux, put it into /etc/NetworkManager/dispatcher.d/ddns.d
 
 domain=qq.com
 secretId=YOUR_ID
 secretKey=YOUR_KEY
 subdomains=www,@,mail,etc
 '''
-configfile = "./ddns.conf"
+configfile = "/etc/NetworkManager/dispatcher.d/ddns.d/ddns.conf"
 
 def getipv6addr():
     hostname = socket.gethostname()
@@ -92,16 +93,19 @@ if __name__ == "__main__":
     ipv6addr = getipv6addr()
     assert len(ipv6addr) != 0, "No ipv6 address is found!"
     ipv6addr = ipv6addr.pop()
-    pprint(ipv6addr)
+    print("DDNS IPV6: {}".format(ipv6addr))
     # parse config file
     config = parseconfig()
-    pprint(config)
+    print("DDNS Domain: {}".format(config["domain"]))
+    print("DDNS SubDomains: {}".format(config["subdomains"]))
     # get the tencent dnspod client
     try:
         client = getdnspodclient(config)
         records = getrecords(client, config, ipv6addr)
-        pprint(records)
+        for record in records:
+            print("DDNS Record: {}".format(record))
         if len(records) != 0:
             modifyrecords(client, records, ipv6addr)
     except TencentCloudSDKException as err:
         print(err)
+        exit(1)
